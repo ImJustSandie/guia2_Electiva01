@@ -8,15 +8,13 @@ using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 public class TouchManager : MonoBehaviour
 {
-    public GameObject Phase;
-    public GameObject Position;
-    public GameObject Delta;
-    public GameObject Direction;
-    public GameObject Magnitude;
-    public GameObject Pressure;
+    public TextMeshProUGUI  Phase;
+    public TextMeshProUGUI  Position;
+    public TextMeshProUGUI  Delta;
+    public TextMeshProUGUI  Direction;
+    public TextMeshProUGUI  Magnitude;
+    public TextMeshProUGUI  Pressure;
     public Button exit;
-    
-
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -36,21 +34,19 @@ public class TouchManager : MonoBehaviour
             Vector2 position = touch.screenPosition;
             Vector2 delta = touch.delta;
             float pressure = touch.pressure;
-            Vector2 direction = calculateDirection(touch.startScreenPosition, touch.screenPosition);
+            var (direction, magnitude) = calculateDirection(touch.startScreenPosition, touch.screenPosition);
 
-           
+           updateText(phase, position, delta, pressure, direction, magnitude);
             
             Debug.Log(
-                $"Finger {touch.finger.index}" +
-                $"Phase {touch.phase}" +
-                $"Pos {touch.screenPosition}" +
-                $"Delta {touch.delta}"+
-                $"Pressure {touch.pressure}"
+                $"Finger {dedos}" +
+                $"Phase {phase}" +
+                $"Pos {position}" +
+                $"Delta {delta}"+
+                $"Pressure {pressure}"
             );
-            calculateDirection(touch.startScreenPosition, touch.screenPosition);
-
+            
         }
-        
     }
 
     private void OnEnable()
@@ -65,17 +61,21 @@ public class TouchManager : MonoBehaviour
     }
 
 
-    private Vector2 calculateDirection(UnityEngine.Vector2 startPos, UnityEngine.Vector2 currentPos)
+    private (Vector2 direction, float magnitude) calculateDirection(UnityEngine.Vector2 startPos, UnityEngine.Vector2 currentPos)
     {
         UnityEngine.Vector2 delta = currentPos - startPos;
         UnityEngine.Vector2 direction = delta.normalized;
         float magnitude = delta.magnitude;
-
-        return direction;
+        return (direction, magnitude);
     }
 
-    private void updateText( UnityEngine.InputSystem.TouchPhase phase, Vector2 position, Vector2 delta, float pressure, Vector2 direction)
+    private void updateText(UnityEngine.InputSystem.TouchPhase phase, Vector2 position, Vector2 delta, float pressure, Vector2 direction, float magnitude)
     {
-        
+        Phase.text = phase.ToString();
+        Position.text = position.ToString();
+        Delta.text = delta.ToString();
+        Direction.text = direction.ToString();
+        Magnitude.text = magnitude.ToString();
+        Pressure.text = pressure.ToString();
     }
 }
