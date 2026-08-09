@@ -21,11 +21,24 @@ public class TouchManager : MonoBehaviour
     private float endedHoldTimer;
     private const float holdDuration = 0.1f;
     public AudioSource EasterEgg;
-    
+    public AudioSource BackgroundMusic;
+    public AudioSource DialogueBleep;
+    private float easterEggTimer = 0f;
+    private bool easterEggPlaying = false;
+    private const int easterEggFingers = 7;
+    private const float easterEggDuration = 7f;
+    private float bleepCooldown = 0f;
+    private const float bleepCooldownTime = 0.08f;
+    private float prevPressure;
+    private float prevMagnitude;
+    private Vector2 prevDelta;
+    private bool hasPrevValues = false;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        BackgroundMusic.loop = true;
+        BackgroundMusic.Play();
     }
 
     // Update is called once per frame
@@ -95,6 +108,69 @@ public class TouchManager : MonoBehaviour
             Phase.text = "Ended";
         else if (currentTouches.Count > 0)
             Phase.text = movedHoldTimer > 0f ? "Moved" : "Stationary";
+
+        if (!easterEggPlaying && activeFingers.Count == easterEggFingers)
+        {
+            easterEggTimer += Time.deltaTime;
+            if (easterEggTimer >= easterEggDuration)
+            {
+                EasterEgg.Play();
+                easterEggPlaying = true;
+                BackgroundMusic.Stop();
+            }
+        }
+        else if (activeFingers.Count != easterEggFingers)
+        {
+            easterEggTimer = 0f;
+        }
+
+        if (easterEggPlaying && !EasterEgg.isPlaying)
+        {
+            easterEggPlaying = false;
+            BackgroundMusic.Play();
+        }
+
+        if (currentTouches.Count > 0 && !easterEggPlaying)
+        {
+            foreach (var touch in currentTouches)
+            {
+                bool changed = false;
+
+                if (touch.phase == UnityEngine.InputSystem.TouchPhase.Moved ||
+                    touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
+                    changed = true;
+
+                if (hasPrevValues)
+                {
+                    if (Mathf.Abs(touch.pressure - prevPressure) > 0.005f)
+                        changed = true;
+                    if (touch.delta.sqrMagnitude > 0.001f)
+                        changed = true;
+                    var (_, mag) = calculateDirection(touch.startScreenPosition, touch.screenPosition);
+                    if (Mathf.Abs(mag - prevMagnitude) > 0.05f)
+                        changed = true;
+                }
+
+                if (changed && bleepCooldown <= 0f)
+                {
+                    DialogueBleep.PlayOneShot(DialogueBleep.clip);
+                    bleepCooldown = bleepCooldownTime;
+                }
+
+                prevPressure = touch.pressure;
+                prevDelta = touch.delta;
+                var (_, magnitude) = calculateDirection(touch.startScreenPosition, touch.screenPosition);
+                prevMagnitude = magnitude;
+            }
+            hasPrevValues = true;
+
+            bleepCooldown -= Time.deltaTime;
+        }
+        else
+        {
+            hasPrevValues = false;
+            bleepCooldown = 0f;
+        }
     }
 
     private void OnEnable()
