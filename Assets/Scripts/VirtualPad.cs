@@ -57,4 +57,9 @@ public class VirtualPad : MonoBehaviour
             positionText.text = $"X: {pos.x:F2}  Y: {pos.y:F2}";
         }
     }
+
+    public void ResetPosition()
+    {
+        character.transform.position = Vector3.zero;
+    }
 }
